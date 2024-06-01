@@ -1,6 +1,6 @@
 import axios from "axios";
 import archiver, { Archiver } from "archiver";
-import type { Writable } from "node:stream";
+import type { Readable, Writable } from "node:stream";
 import path from "node:path";
 
 const token = `Bearer ${process.env.TOKEN}`;
@@ -44,15 +44,17 @@ const downloadImage = async (
 ) => {
   const imageUrl = `https://imagedelivery.net/DnKUqTjrmqfvonSskl9WBQ/${imageId}/raw`;
 
-  const response = await axios.get<ArrayBuffer>(imageUrl, {
+  const response = await axios.get(imageUrl, {
     headers: {
       Authorization: token,
     },
-    responseType: "arraybuffer",
+    responseType: "stream",
   });
 
-  archiverInstance.append(Buffer.from(response.data), {
-    name: filename,
+  return new Promise((resolve, reject) => {
+    response.data.on("end", resolve);
+    response.data.on("error", reject);
+    archiverInstance.append(response.data, { name: filename });
   });
 };
 
@@ -87,8 +89,6 @@ export const main = async (writable: Writable) => {
       batchImages.map((img) => downloadImage(archive, img.id, img.filename))
     );
   }
-  // console.log("Completed loop");
-
   // // Finalize the archive
   archive.on("finish", () => {
     console.log("Finish");
