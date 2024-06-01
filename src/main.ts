@@ -65,7 +65,6 @@ export const main = async (writable: Writable) => {
   const { result } = await listImages();
 
   console.log("Started Process...");
-  console.time("zip");
 
   // Initialize the archiver
   const archive = archiver("zip", {
@@ -77,7 +76,7 @@ export const main = async (writable: Writable) => {
   });
 
   const totalItems = result.images.length;
-  const batchElements = 100;
+  const batchElements = 50;
 
   // Download images in batches
   for (let index = 0; index < totalItems; index += batchElements) {
@@ -97,5 +96,4 @@ export const main = async (writable: Writable) => {
   });
   archive.on("progress", ({ entries }) => console.log(entries));
   await archive.finalize();
-  console.timeEnd("zip");
 };
